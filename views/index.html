@@ -3,19 +3,30 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="initial-scale=1.0,user-scalable=no" />
     <link rel="stylesheet" href="/index.css" />
+    <script>
+        const nick = '{{ nick }}' || null
+        const channel = '{{ channel }}' || null
+    </script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/jquery.3.4.1.min.js"></script>
     <script src="/index.js"></script>
 </head>
 <body>
     <div class="vertical">
         <div id="chatlog">
-            {{chatlog}}
         </div>
+        {% if nick %}
         <form id="write">
-            <input type="text" id="nick" size="5">
             <input type="text" id="message" autocomplete="off">
-            <button type="submit" id="send">送信</button>
+            <button type="submit" id="send">送</button>
         </form>
+        {% else %}
+        <form id="login" method="post" action="/">
+            <input type="text" name="nick">
+            <input type="text" name="channel">
+            <input type="submit" value="入">
+        </form>
+        {% endif %}
     </div>
 </body>
 </html>

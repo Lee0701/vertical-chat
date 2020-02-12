@@ -10,6 +10,7 @@ const http = require('http')
 const express = require('express')
 const socketio = require('socket.io')
 
+const bodyParser = require('body-parser')
 const {Liquid} = require('liquidjs')
 
 const IRC = require('irc-framework')
@@ -26,6 +27,7 @@ const logbotNick = process.env.LOGBOT_NICK || 'logbot'
 const channels = process.env.CHANNELS.split(',') || []
 const basedir = process.env.BASE_DIR || process.cwd()
 const logdir = process.env.LOG_DIR || 'logs'
+const extension = process.env.EXTENSION || '.txt'
 const dirFormat = 'yyyy-mm-dd'
 
 mkdirp.sync(path.join(basedir, logdir))
@@ -58,7 +60,7 @@ logbot.on('message', (event) => {
             ? path.join(basedir, logdir, '_double', channel)
             : path.join(basedir, logdir, channel)
     mkdirp.sync(dirname)
-    fs.appendFile(path.join(dirname, dateformat(now, dirFormat) + '.txt'), content, (err) => {
+    fs.appendFile(path.join(dirname, dateformat(now, dirFormat) + extension), content, (err) => {
         if(err) console.error(err)
     })
 
@@ -67,10 +69,41 @@ logbot.on('message', (event) => {
 app.set('view engine', 'html')
 app.engine('html', liquid.express())
 
+app.use(bodyParser.urlencoded({extended : false}))
+app.use(bodyParser.json())
 app.use(express.static('public'))
+
 app.get('/', (req, res) => {
     res.render('index.html', {})
 })
+
+app.post('/', (req, res) => {
+    const {nick, channel} = req.body
+    
+    res.render('index.html', {nick, channel})
+})
+
+app.get('/logs/:channel', (req, res) => {
+    const channel = req.params.channel
+    const date = dateformat(new Date(), dirFormat)
+    sendLog(res, channel, date)
+})
+
+app.get('/logs/double/:channel', (req, res) => {
+    const channel = req.params.channel
+    const date = dateformat(new Date(), dirFormat)
+    sendLog(res, channel, date, true)
+})
+
+const sendLog = (res, channel, date, double=false) => {
+    const dirname = double
+            ? path.join(basedir, logdir, '_double', channel)
+            : path.join(basedir, logdir, channel)
+    fs.readFile(path.join(dirname, date + extension), (err, data) => {
+        if(err) res.status(404)
+        else res.send(data.toString())
+    })
+}
 
 socket.on('connection', (conn) => {
     conn.on('message', (msg) => {
