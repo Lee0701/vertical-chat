@@ -1,23 +1,36 @@
 
 window.addEventListener('load', () => {
+    if(!channel) return
+
     const socket = io()
 
-    if(channel) {
-        const double = channel.startsWith('##')
-        const doublePrefix = double ? 'double/' : ''
-        const channelName = channel.replace(/\#/g, '')
-        $.ajax({
-            url: '/logs/' + doublePrefix + channelName + '/',
-            success: (data) => {
-                $('#chatlog').append(data.toString())
-            }
-        })
-    }
+    socket.on('connect', () => {
+        socket.emit('join', {nick, channel})
+    })
 
-    $('#write').submit(() => {
-        const text = $('#message').text('')
+    const double = channel.startsWith('##')
+    const doublePrefix = double ? 'double/' : ''
+    const channelName = channel.replace(/\#/g, '')
+    $.ajax({
+        url: '/logs/' + doublePrefix + channelName + '/',
+        success: (data) => {
+            $('#chatlog').append(data.toString())
+        }
+    })
+
+    $('#write').submit((event) => {
+        event.preventDefault()
+        const text = $('#message').val()
         if(text.trim() != '') socket.emit('message', text)
-        return false
+        $('#message').val('')
+    })
+
+    socket.on('message', (msg) => {
+        $('#chatlog').append(msg.toString())
+    })
+
+    socket.on('close', () => {
+        location.reload()
     })
 
 })

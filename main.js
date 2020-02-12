@@ -40,6 +40,7 @@ logbot.connect({
 })
 
 logbot.on('registered', () => {
+    console.log('logbot is registered')
     channels.forEach(channel => logbot.join(channel))
 })
 
@@ -106,9 +107,47 @@ const sendLog = (res, channel, date, double=false) => {
 }
 
 socket.on('connection', (conn) => {
+    let client = null
+    let nick = null
+    let channel = null
+    conn.on('join', (data) => {
+        nick = data.nick
+        client = new IRC.Client()
+        client.connect({
+            host: ircHost,
+            port: ircPort,
+            nick: data.nick,
+            username: data.nick,
+        })
+        client.on('error', (err) => {
+            console.error(err)
+        })
+        client.on('close', () => {
+            conn.emit('close', {})
+        })
+        client.on('registered', () => {
+            if(channels.includes(data.channel)) {
+                channel = client.channel(data.channel)
+                channel.join()
+            }
+        })
+        client.on('message', (data) => {
+            const date = dateformat(new Date(), 'HH:MM:ss')
+            const {target, nick, message} = data
+            if(channel && channel.name == target) {
+                conn.emit('message', `${date} - ${nick}: ${message}\n`)
+            }
+        })
+    })
     conn.on('message', (msg) => {
+        if(channel) {
+            channel.say(msg)
+            const date = dateformat(new Date(), 'HH:MM:ss')
+            conn.emit('message', `${date} - ${nick}: ${msg}\n`)
+        }
     })
     conn.on('disconnect', () => {
+        if(client) client.quit()
     })
 })
 
