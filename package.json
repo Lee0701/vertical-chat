@@ -10,9 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dateformat": "^3.0.3",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "irc-framework": "^4.6.0",
     "liquidjs": "^9.7.0",
-    "node-irc": "0.0.5",
+    "mkdirp": "^1.0.3",
     "socket.io": "^2.3.0"
   }
 }

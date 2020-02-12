@@ -1,9 +1,18 @@
 
+require('dotenv').config()
+
+const fs = require('fs')
+const path = require('path')
+const mkdirp = require('mkdirp')
+const dateformat = require('dateformat')
+
 const http = require('http')
 const express = require('express')
 const socketio = require('socket.io')
 
 const {Liquid} = require('liquidjs')
+
+const IRC = require('irc-framework')
 
 const app = express()
 const server = http.createServer(app)
@@ -11,15 +20,49 @@ const socket = socketio(server)
 const liquid = new Liquid()
 
 const port = process.env.PORT || 8080
+const ircHost = process.env.IRC_HOST || 'irc.freenode.net'
+const ircPort = process.env.IRC_PORT || 6667
+const logbotNick = process.env.LOGBOT_NICK || 'logbot'
+const channels = process.env.CHANNELS.split(',') || []
+const basedir = process.env.BASE_DIR || process.cwd()
+const logdir = process.env.LOG_DIR || 'logs'
+const dirFormat = 'yyyy-mm-dd'
 
-const clients = []
+mkdirp.sync(path.join(basedir, logdir))
 
-class Client {
-    constructor(id) {
-        this.id = id
-        this.nick = null
-    }
-}
+const logbot = new IRC.Client()
+logbot.connect({
+    host: ircHost,
+    port: ircPort,
+    nick: logbotNick,
+})
+
+logbot.on('registered', () => {
+    channels.forEach(channel => logbot.join(channel))
+})
+
+logbot.on('message', (event) => {
+    const {nick, target, message} = event
+    if(!channels.includes(target)) return
+
+    console.log(`[${target}] ${nick}: ${message}`)
+
+    const double = target.startsWith('##')
+    const channel = target.replace(/\#/g, '')
+    const now = new Date()
+    const date = dateformat(now, 'HH:MM:ss')
+    
+    const content = `${date} - ${nick}: ${message}\n`
+
+    const dirname = double
+            ? path.join(basedir, logdir, '_double', channel)
+            : path.join(basedir, logdir, channel)
+    mkdirp.sync(dirname)
+    fs.appendFile(path.join(dirname, dateformat(now, dirFormat) + '.txt'), content, (err) => {
+        if(err) console.error(err)
+    })
+
+})
 
 app.set('view engine', 'html')
 app.engine('html', liquid.express())
@@ -29,34 +72,10 @@ app.get('/', (req, res) => {
     res.render('index.html', {})
 })
 
-const getSocket = (client) => socket.sockets.connected[client.id]
-
 socket.on('connection', (conn) => {
-    const client = new Client(conn.id)
-    clients.push(client)
-    conn.on('nick.change', (data) => {
-        const nick = data.nick
-        const duplicate = clients.find(client => client.nick == nick) == false
-        if(duplicate) conn.emit('nick.change.deny', {reason: 'duplicate'})
-        else {
-            const old = client.nick
-            client.nick = nick
-            clients.forEach(client => {
-                getSocket(client).emit('nick.update', {old, nick})
-            })
-        }
-    })
-    conn.on('chat.message', (data) => {
-        const nick = client.nick
-        const message = data.message.trim()
-        if(!nick) return
-        if(message == '') return
-        clients.forEach(client => {
-            getSocket(client).emit('chat.message', {nick, message})
-        })
+    conn.on('message', (msg) => {
     })
     conn.on('disconnect', () => {
-        clients.splice(clients.indexOf(client), 1)
     })
 })
 
