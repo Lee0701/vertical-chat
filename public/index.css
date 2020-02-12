@@ -1,0 +1,18 @@
+
+body {
+    margin: 0px;
+    background-color: antiquewhite;
+}
+
+#chatlog {
+    font-size: 24pt;
+    font-family: serif;
+}
+
+.vertical {
+    writing-mode: vertical-rl;
+}
+
+.nick {
+    color: blue;
+}

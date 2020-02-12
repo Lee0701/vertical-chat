@@ -1,0 +1,21 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no" />
+    <link rel="stylesheet" href="/index.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/index.js"></script>
+</head>
+<body>
+    <div class="vertical">
+        <div id="chatlog">
+            {{chatlog}}
+        </div>
+        <form id="write">
+            <input type="text" id="nick" size="5">
+            <input type="text" id="message" autocomplete="off">
+            <button type="submit" id="send">送信</button>
+        </form>
+    </div>
+</body>
+</html>
