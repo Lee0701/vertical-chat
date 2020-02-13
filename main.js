@@ -24,6 +24,7 @@ const port = process.env.PORT || 8080
 const ircHost = process.env.IRC_HOST || 'irc.freenode.net'
 const ircPort = process.env.IRC_PORT || 6667
 const logbotNick = process.env.LOGBOT_NICK || 'logbot'
+const logbotRealName = process.env.LOGBOT_REAL_NAME || logbotNick
 const channels = process.env.CHANNELS.split(',') || []
 const basedir = process.env.BASE_DIR || process.cwd()
 const logdir = process.env.LOG_DIR || 'logs'
@@ -36,6 +37,7 @@ mkdirp.sync(path.join(basedir, logdir))
 let nicks = {}
 fs.readFile(path.join(basedir, logdir, 'nicks.json'), (err, data) => {
     if(data) nicks = JSON.parse(data)
+    nicks[logbotNick] = logbotRealName
 })
 const saveNicks = () => fs.writeFileSync(path.join(basedir, logdir, 'nicks.json'), JSON.stringify(nicks))
 
