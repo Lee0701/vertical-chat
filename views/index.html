@@ -24,10 +24,10 @@
         </form>
         {% else %}
         <form id="login" method="post" action="/">
-            <input type="text" name="nick" size="5">
-            <input type="text" name="displaynick" size="5">
-            <input type="text" name="channel" value="{{ channel }}">
-            <input type="submit" value="進入">
+            <input type="text" name="nick" size="5" placeholder="名">
+            <input type="text" name="displaynick" size="5" placeholder="實名">
+            <input type="text" name="channel" id="channel" size="10" value="{{ channel }}" placeholder="臺">
+            <button type="submit">進入</button>
         </form>
         {% endif %}
     </div>

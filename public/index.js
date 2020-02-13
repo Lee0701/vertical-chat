@@ -7,6 +7,14 @@ window.addEventListener('load', () => {
     const nicks = {}
     let firstDate = new Date()
     let lastDate = new Date(0)
+    
+    const getYesterday = (date) => {
+        return new Date((date || new Date()).getTime() - 1000*60*60*24)
+    }
+
+    const formatDate = (date) => {
+        return date.getFullYear() + '-' + new String(date.getMonth() + 1).padStart(2, '0') + '-' + new String(date.getDate()).padStart(2, '0')
+    }
 
     socket.on('connect', () => {
         socket.emit('join', {nick, channel})
@@ -16,9 +24,7 @@ window.addEventListener('load', () => {
     })
 
     $('#loadmore').click(() => {
-        const yesterday = new Date(firstDate.getTime() - 1000*60*60*24)
-        const date = yesterday.getFullYear() + '-' + new String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + yesterday.getDate()
-        fetchLog(channel, date)
+        fetchLog(channel, formatDate(getYesterday(firstDate)))
     })
 
     $('#write').submit((event) => {
@@ -84,7 +90,7 @@ window.addEventListener('load', () => {
             + '<span class="text">' + parsed.text + '</span>'
             + '</span>'
 
-    const fetchLog = (channel, date=null) => {
+    const fetchLog = (channel, date=null, retry=10) => {
         const double = channel.startsWith('##')
         const doublePrefix = double ? 'double/' : ''
         const channelName = channel.replace(/\#/g, '')
@@ -92,37 +98,35 @@ window.addEventListener('load', () => {
         $.ajax({
             url: '/logs/' + doublePrefix + channelName + '/' + (date ? date + '/' : ''),
             success: (data) => {
-                prependLog(data)
+                prependLog(data, true)
+            },
+            error: (req, status) => {
+                if(retry) {
+                    firstDate = getYesterday(firstDate)
+                    fetchLog(channel, formatDate(firstDate), retry-1)
+                }
             }
         })
     }
 
-    const prependLog = (log) => {
+    const prependLog = (log, updateLastDate=false) => {
         const messages = log.split('\n')
-        let startDate = null
-        let lastDate = new Date(0)
-        let first = true
+        
+        const group = $('<div class="group"></div>')
 
+        let first = true
         for(const message of messages) {
             if(message.trim() != '') {
                 const parsed = parseMessage(message, lastDate)
 
-                if(first) {
-                    startDate = parsed.date
-                    if(startDate.getTime() < firstDate.getTime()) firstDate = startDate
-                    lastDate = firstDate
-                    first = false
-                }
+                group.append(formatMessage(parsed))
 
-                console.log(startDate.toISOString(), firstDate.toISOString())
-
-                if(lastDate && $('.message.' + lastDate.getTime()).length) $('.message.' + lastDate.getTime()).after(formatMessage(parsed))
-                else $('#chatlog').prepend(formatMessage(parsed))
-
-                lastDate = parsed.date
-
+                if(updateLastDate) lastDate = parsed.date
+                if(first) firstDate = parsed.date
+                first = false
             }
         }
+        $('#chatlog').prepend(group)
     }
 
     const appendMessage = (msg) => {

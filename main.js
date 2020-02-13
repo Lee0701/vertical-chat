@@ -124,7 +124,7 @@ const sendLog = (res, channel, date, double=false) => {
             ? path.join(basedir, logdir, '_double', channel)
             : path.join(basedir, logdir, channel)
     fs.readFile(path.join(dirname, date + extension), (err, data) => {
-        if(err) res.status(404)
+        if(err) res.status(404).send()
         else res.send(data.toString())
     })
 }
