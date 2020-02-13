@@ -3,6 +3,8 @@ window.addEventListener('load', () => {
 
     const converter = window.index.NumberToChineseWords
     const socket = io()
+
+    let connecting = false
     let nick = null
     let channel = null
 
@@ -23,6 +25,10 @@ window.addEventListener('load', () => {
     socket.on('connect', () => {
         $('#login').css('display', 'block')
         $('#write').css('display', 'none')
+        $('#login button').html('進入')
+        $('#login button').prop('disabled', false)
+
+        connecting = false
 
         $('#chatlog').html('')
         if(channel) fetchLog(channel)
@@ -41,6 +47,7 @@ window.addEventListener('load', () => {
 
     $('#login').submit((event) => {
         event.preventDefault()
+        if(connecting) return
 
         nick = $('#nick').val()
         displaynick = $('#displaynick').val()
@@ -48,6 +55,10 @@ window.addEventListener('load', () => {
         const password = $('#password').val()
 
         socket.emit('join', {nick, displaynick, password, channel})
+
+        $('#login button').html('進入中⋯')
+        $('#login button').prop('disabled', true)
+        connecting = true
     })
 
     socket.on('registered', () => {
