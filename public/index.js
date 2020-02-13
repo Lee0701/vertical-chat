@@ -98,9 +98,9 @@ window.addEventListener('load', () => {
         $.ajax({
             url: '/logs/' + doublePrefix + channelName + '/' + (date ? date + '/' : ''),
             success: (data) => {
-                prependLog(data, true)
+                prependLog(data, date == null)
             },
-            error: (req, status) => {
+            error: () => {
                 if(retry) {
                     firstDate = getYesterday(firstDate)
                     fetchLog(channel, formatDate(firstDate), retry-1)
@@ -113,26 +113,29 @@ window.addEventListener('load', () => {
         const messages = log.split('\n')
         
         const group = $('<div class="group"></div>')
+        let last = updateLastDate ? lastDate : new Date(0)
 
         let first = true
         for(const message of messages) {
             if(message.trim() != '') {
-                const parsed = parseMessage(message, lastDate)
+                const parsed = parseMessage(message, last)
 
                 group.append(formatMessage(parsed))
 
-                if(updateLastDate) lastDate = parsed.date
+                last = parsed.date
                 if(first) firstDate = parsed.date
                 first = false
             }
         }
+        if(updateLastDate) lastDate = last
+        
         $('#chatlog').prepend(group)
     }
 
     const appendMessage = (msg) => {
         const parsed = parseMessage(msg, lastDate)
         lastDate = parsed.date
-        $('#chatlog').append(formatMessage(parsed))
+        $('#chatlog > .group').last().append(formatMessage(parsed))
     }
 
 })
