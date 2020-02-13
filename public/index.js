@@ -6,6 +6,8 @@ window.addEventListener('load', () => {
     let nick = null
     let channel = null
 
+    if(channelParam) channel = channelParam
+
     const nicks = {}
     let firstDate = new Date()
     let lastDate = new Date(0)
@@ -51,7 +53,7 @@ window.addEventListener('load', () => {
     socket.on('registered', () => {
         $('#login').css('display', 'none')
         $('#write').css('display', 'block')
-        
+
         $('#chatlog').html('')
         if(channel) fetchLog(channel)
     })
