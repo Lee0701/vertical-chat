@@ -2,11 +2,12 @@
 body {
     margin: 0px;
     background-color: antiquewhite;
+    overflow-y: hidden;
 }
 
 .tooltip {
     position: relative;
-    display: inline-block;
+    display: inline;
 }
 
 .tooltip > .tooltip-text {
@@ -34,6 +35,13 @@ body {
 #chatlog {
     font-size: 24pt;
     font-family: serif;
+    word-break: break-all;
+}
+
+button#loadmore {
+    height: 100%;
+    width: 32px;
+    font-size: 16pt;
 }
 
 #write {

@@ -47,7 +47,7 @@ logbot.connect({
 })
 
 logbot.on('registered', () => {
-    console.log('logbot is registered')
+    console.log(logbotNick + ' is registered')
     channels.forEach(channel => logbot.join(channel))
 })
 
@@ -104,6 +104,18 @@ app.get('/logs/:channel', (req, res) => {
 app.get('/logs/double/:channel', (req, res) => {
     const channel = req.params.channel
     const date = dateformat(new Date(), dirFormat)
+    sendLog(res, channel, date, true)
+})
+
+app.get('/logs/:channel/:date', (req, res) => {
+    const channel = req.params.channel
+    const date = req.params.date
+    sendLog(res, channel, date)
+})
+
+app.get('/logs/double/:channel/:date', (req, res) => {
+    const channel = req.params.channel
+    const date = req.params.date
     sendLog(res, channel, date, true)
 })
 
