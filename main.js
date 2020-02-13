@@ -29,8 +29,15 @@ const basedir = process.env.BASE_DIR || process.cwd()
 const logdir = process.env.LOG_DIR || 'logs'
 const extension = process.env.EXTENSION || '.txt'
 const dirFormat = 'yyyy-mm-dd'
+const timeFormat = 'yyyy-mm-dd HH:MM:ss'
 
 mkdirp.sync(path.join(basedir, logdir))
+
+let nicks = {}
+fs.readFile(path.join(basedir, logdir, 'nicks.json'), (err, data) => {
+    if(data) nicks = JSON.parse(data)
+})
+const saveNicks = () => fs.writeFileSync(path.join(basedir, logdir, 'nicks.json'), JSON.stringify(nicks))
 
 const logbot = new IRC.Client()
 logbot.connect({
@@ -53,7 +60,7 @@ logbot.on('message', (event) => {
     const double = target.startsWith('##')
     const channel = target.replace(/\#/g, '')
     const now = new Date()
-    const date = dateformat(now, 'HH:MM:ss')
+    const date = dateformat(now, timeFormat)
     
     const content = `${date} - ${nick}: ${message}\n`
 
@@ -75,7 +82,8 @@ app.use(bodyParser.json())
 app.use(express.static('public'))
 
 app.get('/', (req, res) => {
-    res.render('index.html', {})
+    const channel = req.query.channel || '#'
+    res.render('index.html', {channel})
 })
 
 app.post('/', (req, res) => {
@@ -110,45 +118,59 @@ socket.on('connection', (conn) => {
     let client = null
     let nick = null
     let channel = null
+
+    conn.emit('nick', nicks)
+
     conn.on('join', (data) => {
         nick = data.nick
+        if(data.displaynick) nicks[nick] = data.displaynick
+        saveNicks()
+
         client = new IRC.Client()
         client.connect({
             host: ircHost,
             port: ircPort,
             nick: data.nick,
-            username: data.nick,
+            username: data.displaynick || data.nick,
         })
+
         client.on('error', (err) => {
             console.error(err)
         })
+
         client.on('close', () => {
             conn.emit('close', {})
         })
+
         client.on('registered', () => {
             if(channels.includes(data.channel)) {
                 channel = client.channel(data.channel)
                 channel.join()
             }
         })
+
         client.on('message', (data) => {
-            const date = dateformat(new Date(), 'HH:MM:ss')
+            const date = dateformat(new Date(), timeFormat)
             const {target, nick, message} = data
             if(channel && channel.name == target) {
                 conn.emit('message', `${date} - ${nick}: ${message}\n`)
             }
         })
+
     })
+
     conn.on('message', (msg) => {
         if(channel) {
             channel.say(msg)
-            const date = dateformat(new Date(), 'HH:MM:ss')
+            const date = dateformat(new Date(), timeFormat)
             conn.emit('message', `${date} - ${nick}: ${msg}\n`)
         }
     })
+
     conn.on('disconnect', () => {
         if(client) client.quit()
     })
+
 })
 
 server.listen(port, () => {

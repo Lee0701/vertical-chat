@@ -9,6 +9,7 @@
     </script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/jquery.3.4.1.min.js"></script>
+    <script src="/number-to-chinese-words.min.js"></script>
     <script src="/index.js"></script>
 </head>
 <body>
@@ -23,7 +24,8 @@
         {% else %}
         <form id="login" method="post" action="/">
             <input type="text" name="nick">
-            <input type="text" name="channel">
+            <input type="text" name="displaynick">
+            <input type="text" name="channel" value="{{ channel }}">
             <input type="submit" value="入">
         </form>
         {% endif %}

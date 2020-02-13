@@ -17,6 +17,7 @@
     "irc-framework": "^4.6.0",
     "liquidjs": "^9.7.0",
     "mkdirp": "^1.0.3",
+    "number-to-chinese-words": "^1.0.20",
     "socket.io": "^2.3.0"
   }
 }
