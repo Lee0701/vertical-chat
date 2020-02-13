@@ -39,6 +39,21 @@ fs.readFile(path.join(basedir, logdir, 'nicks.json'), (err, data) => {
 })
 const saveNicks = () => fs.writeFileSync(path.join(basedir, logdir, 'nicks.json'), JSON.stringify(nicks))
 
+const appendLog = (now, target, content) => {
+    const double = target.startsWith('##')
+    const channel = target.replace(/\#/g, '')
+
+    const dirname = double
+            ? path.join(basedir, logdir, '_double', channel)
+            : path.join(basedir, logdir, channel)
+    
+    mkdirp.sync(dirname)
+
+    fs.appendFile(path.join(dirname, dateformat(now, dirFormat) + extension), content, (err) => {
+        if(err) console.error(err)
+    })
+}
+
 const logbot = new IRC.Client()
 logbot.connect({
     host: ircHost,
@@ -57,21 +72,44 @@ logbot.on('message', (event) => {
 
     console.log(`[${target}] ${nick}: ${message}`)
 
-    const double = target.startsWith('##')
-    const channel = target.replace(/\#/g, '')
     const now = new Date()
     const date = dateformat(now, timeFormat)
     
     const content = `${date} - ${nick}: ${message}\n`
 
-    const dirname = double
-            ? path.join(basedir, logdir, '_double', channel)
-            : path.join(basedir, logdir, channel)
-    mkdirp.sync(dirname)
-    fs.appendFile(path.join(dirname, dateformat(now, dirFormat) + extension), content, (err) => {
-        if(err) console.error(err)
-    })
+    appendLog(now, target, content)
+})
 
+logbot.on('join', (event) => {
+    const {channel, nick} = event
+    if(!channels.includes(channel)) return
+
+    const now = new Date()
+    const date = dateformat(now, timeFormat)
+    
+    const content = `${date} - ${nick} joined\n`
+    appendLog(now, channel, content)
+})
+
+logbot.on('part', (event) => {
+    const {channel, nick} = event
+    if(!channels.includes(channel)) return
+
+    const now = new Date()
+    const date = dateformat(now, timeFormat)
+    
+    const content = `${date} - ${nick} quit\n`
+    appendLog(now, channel, content)
+})
+
+logbot.on('quit', (event) => {
+    const {nick} = event
+
+    const now = new Date()
+    const date = dateformat(now, timeFormat)
+    
+    const content = `${date} - ${nick} quit\n`
+    channels.forEach(channel => appendLog(now, channel, content))
 })
 
 app.set('view engine', 'html')
@@ -168,6 +206,28 @@ socket.on('connection', (conn) => {
             if(channel && channel.name == target) {
                 conn.emit('message', `${date} - ${nick}: ${message}\n`)
             }
+        })
+
+        client.on('join', (data) => {
+            const date = dateformat(new Date(), timeFormat)
+            const {channel: target, nick} = data
+            if(channel && channel.name == target) {
+                conn.emit('message', `${date} - ${nick} joined\n`)
+            }
+        })
+
+        client.on('part', (data) => {
+            const date = dateformat(new Date(), timeFormat)
+            const {channel: target, nick} = data
+            if(channel && channel.name == target) {
+                conn.emit('message', `${date} - ${nick} quit\n`)
+            }
+        })
+
+        client.on('quit', (data) => {
+            const date = dateformat(new Date(), timeFormat)
+            const {nick} = data
+            conn.emit('message', `${date} - ${nick} quit\n`)
         })
 
     })

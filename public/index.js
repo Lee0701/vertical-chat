@@ -72,22 +72,43 @@ window.addEventListener('load', () => {
         const i1 = msg.indexOf(' - ')
         const i2 = msg.indexOf(': ')
 
+        const joined = msg.indexOf(' joined')
+        const parted = msg.indexOf(' quit')
+
         const time = msg.substring(0, i1)
         const date = new Date(Date.parse(time))
         const displayDate = diffHanDate(lastDate || date, date)
         const fullDate = diffHanDate(new Date(0), date)
 
-        const nick = msg.substring(i1+3, i2)
-        const displayNick = nicks[nick] || nick
-        const text = msg.substring(i2 + 2)
+        if(i2 != -1) {
+            const nick = msg.substring(i1+3, i2)
+            const displayNick = nicks[nick] || nick
+            const text = msg.substring(i2 + 2).trim()
 
-        return {date, displayDate, fullDate, nick, displayNick, text}
+            return {date, displayDate, fullDate, nick, displayNick, text}
+
+        } else if(joined != -1) {
+            const nick = msg.substring(i1+3, joined)
+            const displayNick = nicks[nick] || nick
+            const other = '入來'
+
+            return {date, displayDate, fullDate, nick, displayNick, other}
+
+        } else if(parted != -1) {
+            const nick = msg.substring(i1+3, parted)
+            const displayNick = nicks[nick] || nick
+            const other = '出去'
+
+            return {date, displayDate, fullDate, nick, displayNick, other}
+
+        }
     }
 
     const formatMessage = (parsed) => '<span class="message ' + parsed.date.getTime() + '">'
             + '<span class="date tooltip">' + parsed.displayDate + '<span class="tooltip-text">' + parsed.fullDate + '</span></span>'
-            + '<span class="nick tooltip">' + parsed.displayNick + '<span class="tooltip-text">' + parsed.nick + '</span></span><span class="said">曰</span>'
-            + '<span class="text">' + parsed.text + '</span>'
+            + '<span class="nick tooltip">' + parsed.displayNick + '<span class="tooltip-text">' + parsed.nick + '</span></span>'
+            + (parsed.text ? '<span class="said">曰</span><span class="text">' + parsed.text + '</span>' : '')
+            + (parsed.other ? '<span class="other">' + parsed.other + '</span>' : '')
             + '</span>'
 
     const fetchLog = (channel, date=null, retry=10) => {
