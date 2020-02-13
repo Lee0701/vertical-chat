@@ -26,6 +26,7 @@ const ircPort = process.env.IRC_PORT || 6667
 const logbotNick = process.env.LOGBOT_NICK || 'logbot'
 const logbotRealName = process.env.LOGBOT_REAL_NAME || logbotNick
 const channels = process.env.CHANNELS.split(',') || []
+const joinMessages = JSON.parse(process.env.JOIN_MESSAGES || '[]')
 const basedir = process.env.BASE_DIR || process.cwd()
 const logdir = process.env.LOG_DIR || 'logs'
 const extension = process.env.EXTENSION || '.txt'
@@ -65,6 +66,7 @@ logbot.connect({
 
 logbot.on('registered', () => {
     console.log(logbotNick + ' is registered')
+    joinMessages.forEach(msg => logbot.say(msg.to, msg.text))
     channels.forEach(channel => logbot.join(channel))
 })
 
