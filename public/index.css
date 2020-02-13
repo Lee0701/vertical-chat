@@ -9,6 +9,25 @@ body {
     font-family: serif;
 }
 
+#write {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+#write > * {
+    width: 32px;
+    font-size: 16pt;
+}
+
+#write > #message {
+    flex: 1;
+}
+
+#write > #send {
+    height: 10ex;
+}
+
 .vertical {
     writing-mode: vertical-rl;
 }
