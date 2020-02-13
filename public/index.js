@@ -1,9 +1,11 @@
 
 window.addEventListener('load', () => {
-    if(!channel || !nick) return
 
     const converter = window.index.NumberToChineseWords
     const socket = io()
+    let nick = null
+    let channel = null
+
     const nicks = {}
     let firstDate = new Date()
     let lastDate = new Date(0)
@@ -17,10 +19,11 @@ window.addEventListener('load', () => {
     }
 
     socket.on('connect', () => {
-        socket.emit('join', {nick, channel})
-        
+        $('#login').css('display', 'block')
+        $('#write').css('display', 'none')
+
         $('#chatlog').html('')
-        fetchLog(channel)
+        if(channel) fetchLog(channel)
     })
 
     $('#loadmore').click(() => {
@@ -32,6 +35,25 @@ window.addEventListener('load', () => {
         const text = $('#message').val()
         if(text.trim() != '') socket.emit('message', text)
         $('#message').val('')
+    })
+
+    $('#login').submit((event) => {
+        event.preventDefault()
+
+        nick = $('#nick').val()
+        displaynick = $('#displaynick').val()
+        channel = $('#channel').val()
+        const password = $('#password').val()
+
+        socket.emit('join', {nick, displaynick, password, channel})
+    })
+
+    socket.on('registered', () => {
+        $('#login').css('display', 'none')
+        $('#write').css('display', 'block')
+        
+        $('#chatlog').html('')
+        if(channel) fetchLog(channel)
     })
 
     socket.on('nick', (data) => {

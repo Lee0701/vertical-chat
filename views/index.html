@@ -4,10 +4,6 @@
     <meta name="viewport" content="initial-scale=1.0,user-scalable=no" />
     <link href="https://fonts.googleapis.com/css?family=Noto+Serif|Noto+Serif+JP|Noto+Serif+KR|Noto+Serif+SC|Noto+Serif+TC&display=swap&subset=chinese-simplified,chinese-traditional,japanese,korean,latin-ext,vietnamese" rel="stylesheet">
     <link rel="stylesheet" href="/index.css" />
-    <script>
-        const nick = '{{ nick }}' || undefined
-        const channel = '{{ channel }}' || undefined
-    </script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/jquery.3.4.1.min.js"></script>
     <script src="/number-to-chinese-words.min.js"></script>
@@ -18,20 +14,17 @@
         <button type="button" id="loadmore">先誌</button>
         <div id="chatlog">
         </div>
-        {% if nick %}
-        <form id="write">
+        <form id="write" style="display: none;">
             <input type="text" id="message" autocomplete="off">
             <button type="submit" id="send">送信</button>
         </form>
-        {% else %}
         <form id="login" method="post" action="/">
-            <input type="text" name="nick" size="5" placeholder="名">
-            <input type="text" name="displaynick" size="5" placeholder="實名">
-            <input type="password" name="password" size="8" placeholder="暗號">
-            <input type="text" name="channel" id="channel" size="10" value="{{ channel }}" placeholder="臺">
+            <input type="text" id="nick" size="5" placeholder="名">
+            <input type="text" id="displaynick" size="5" placeholder="實名">
+            <input type="password" id="password" size="8" placeholder="暗號">
+            <input type="text" id="channel" size="10" value="{{ channel }}" placeholder="臺">
             <button type="submit">進入</button>
         </form>
-        {% endif %}
     </div>
 </body>
 </html>

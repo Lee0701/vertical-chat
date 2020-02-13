@@ -127,15 +127,6 @@ app.get('/', (req, res) => {
     res.render('index.html', {channel})
 })
 
-app.post('/', (req, res) => {
-    const {nick, displaynick, channel} = req.body
-
-    if(displaynick) nicks[nick] = displaynick
-    saveNicks()
-    
-    res.render('index.html', {nick, channel})
-})
-
 app.get('/logs/:channel', (req, res) => {
     const channel = req.params.channel
     const date = dateformat(new Date(), dirFormat)
@@ -181,6 +172,9 @@ socket.on('connection', (conn) => {
         nick = data.nick
         channel = data.channel
         
+        if(data.displaynick) nicks[nick] = data.displaynick
+        saveNicks()
+    
         client = new irc.Client(ircHost, data.nick, {
             port: ircPort,
             userName: data.nick,
@@ -188,6 +182,12 @@ socket.on('connection', (conn) => {
             sasl: (!data.password == false),
             password: data.password,
             channels: [data.channel],
+        })
+
+        conn.emit('nick', nicks)
+
+        client.addListener('registered', () => {
+            conn.emit('registered', {})
         })
 
         client.addListener('message', (nick, target, message) => {
