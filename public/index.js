@@ -8,20 +8,21 @@ window.addEventListener('load', () => {
 
     socket.on('connect', () => {
         socket.emit('join', {nick, channel})
+        
+        const double = channel.startsWith('##')
+        const doublePrefix = double ? 'double/' : ''
+        const channelName = channel.replace(/\#/g, '')
+        $.ajax({
+            url: '/logs/' + doublePrefix + channelName + '/',
+            success: (data) => {
+                const messages = data.split('\n')
+                for(const message of messages) {
+                    if(message.trim() != '')appendMessage(message)
+                }
+            }
+        })
     })
 
-    const double = channel.startsWith('##')
-    const doublePrefix = double ? 'double/' : ''
-    const channelName = channel.replace(/\#/g, '')
-    $.ajax({
-        url: '/logs/' + doublePrefix + channelName + '/',
-        success: (data) => {
-            const messages = data.split('\n')
-            for(const message of messages) {
-                if(message.trim() != '')appendMessage(message)
-            }
-        }
-    })
 
     $('#write').submit((event) => {
         event.preventDefault()
@@ -31,7 +32,7 @@ window.addEventListener('load', () => {
     })
 
     socket.on('nick', (data) => {
-        for(key in data) nicks[key] = data[key]
+        for(key of Object.keys(data)) nicks[key] = data[key]
     })
 
     socket.on('message', (msg) => {

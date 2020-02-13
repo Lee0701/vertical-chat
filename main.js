@@ -87,7 +87,10 @@ app.get('/', (req, res) => {
 })
 
 app.post('/', (req, res) => {
-    const {nick, channel} = req.body
+    const {nick, displaynick, channel} = req.body
+
+    if(displaynick) nicks[nick] = displaynick
+    saveNicks()
     
     res.render('index.html', {nick, channel})
 })
@@ -123,8 +126,6 @@ socket.on('connection', (conn) => {
 
     conn.on('join', (data) => {
         nick = data.nick
-        if(data.displaynick) nicks[nick] = data.displaynick
-        saveNicks()
 
         client = new IRC.Client()
         client.connect({
