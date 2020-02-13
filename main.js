@@ -60,6 +60,7 @@ const appendLog = (now, target, content) => {
 
 const logbot = new irc.Client(ircHost, logbotNick, {
     port: ircPort,
+    userName: logbotNick,
     realName: logbotRealName,
     sasl: useSasl,
     password: logbotPassword,
@@ -182,6 +183,7 @@ socket.on('connection', (conn) => {
         
         client = new irc.Client(ircHost, data.nick, {
             port: ircPort,
+            userName: data.nick,
             realName: data.displaynick || data.nick,
             sasl: (!data.password == false),
             password: data.password,
