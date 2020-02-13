@@ -4,6 +4,33 @@ body {
     background-color: antiquewhite;
 }
 
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip > .tooltip-text {
+    visibility: hidden;
+    background-color: black;
+    color: white;
+    font-size: initial;
+    text-align: center;
+
+    left: 105%;
+    top: 0px;
+    bottom: 0px;
+    min-height: 100px;
+    padding: 10px 2px;
+    border-radius: 5px;
+    
+    position: absolute;
+    z-index: 1;
+}
+
+.tooltip:hover > .tooltip-text {
+    visibility: visible;
+}
+
 #chatlog {
     font-size: 24pt;
     font-family: serif;

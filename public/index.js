@@ -16,9 +16,10 @@ window.addEventListener('load', () => {
         $.ajax({
             url: '/logs/' + doublePrefix + channelName + '/',
             success: (data) => {
+                $('#chatlog').html('')
                 const messages = data.split('\n')
                 for(const message of messages) {
-                    if(message.trim() != '')appendMessage(message)
+                    if(message.trim() != '') appendMessage(message)
                 }
             }
         })
@@ -74,12 +75,17 @@ window.addEventListener('load', () => {
         const hanDate = convertDate(date)
         const displayDate = diffHanDate(lastDate, date, hanDate)
         lastDate = date
+        const fullDate = diffHanDate(new Date(0), date, hanDate)
 
         const nick = msg.substring(i1+3, i2)
         const displayNick = nicks[nick] || nick
         const text = msg.substring(i2 + 2)
 
-        $('#chatlog').append('<span class="message ' + date.toISOString() + '"><span class="date">' + displayDate + '</span><span class="nick">' + displayNick + '</span><span class="said">曰</span><span class="text">' + text + '</span></span>')
+        $('#chatlog').append('<span class="message ' + date.toISOString() + '">'
+                + '<span class="date tooltip">' + displayDate + '<span class="tooltip-text">' + fullDate + '</span></span>'
+                + '<span class="nick tooltip">' + displayNick + '<span class="tooltip-text">' + nick + '</span></span><span class="said">曰</span>'
+                + '<span class="text">' + text + '</span>'
+                + '</span>')
     }
 
 })
