@@ -1,6 +1,6 @@
 
 window.addEventListener('load', () => {
-    if(!channel) return
+    if(!channel || !nick) return
 
     const converter = window.index.NumberToChineseWords
     const socket = io()

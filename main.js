@@ -13,7 +13,7 @@ const socketio = require('socket.io')
 const bodyParser = require('body-parser')
 const {Liquid} = require('liquidjs')
 
-const IRC = require('irc-framework')
+const irc = require('irc')
 
 const app = express()
 const server = http.createServer(app)
@@ -23,10 +23,11 @@ const liquid = new Liquid()
 const port = process.env.PORT || 8080
 const ircHost = process.env.IRC_HOST || 'irc.freenode.net'
 const ircPort = process.env.IRC_PORT || 6667
+const useSasl = process.env.USE_SASL == 'true'
 const logbotNick = process.env.LOGBOT_NICK || 'logbot'
 const logbotRealName = process.env.LOGBOT_REAL_NAME || logbotNick
+const logbotPassword = process.env.LOGBOT_PASSWORD
 const channels = process.env.CHANNELS.split(',') || []
-const joinMessages = JSON.parse(process.env.JOIN_MESSAGES || '[]')
 const basedir = process.env.BASE_DIR || process.cwd()
 const logdir = process.env.LOG_DIR || 'logs'
 const extension = process.env.EXTENSION || '.txt'
@@ -57,21 +58,21 @@ const appendLog = (now, target, content) => {
     })
 }
 
-const logbot = new IRC.Client()
-logbot.connect({
-    host: ircHost,
+const logbot = new irc.Client(ircHost, logbotNick, {
     port: ircPort,
-    nick: logbotNick,
+    realName: logbotRealName,
+    sasl: useSasl,
+    password: logbotPassword,
+    channels: channels,
 })
 
-logbot.on('registered', () => {
+logbot.addListener('error', (err) => console.error(err))
+
+logbot.addListener('registered', () => {
     console.log(logbotNick + ' is registered')
-    joinMessages.forEach(msg => logbot.say(msg.to, msg.text))
-    channels.forEach(channel => logbot.join(channel))
 })
 
-logbot.on('message', (event) => {
-    const {nick, target, message} = event
+logbot.addListener('message', (nick, target, message) => {
     if(!channels.includes(target)) return
 
     console.log(`[${target}] ${nick}: ${message}`)
@@ -84,8 +85,7 @@ logbot.on('message', (event) => {
     appendLog(now, target, content)
 })
 
-logbot.on('join', (event) => {
-    const {channel, nick} = event
+logbot.addListener('join', (channel, nick) => {
     if(!channels.includes(channel)) return
 
     const now = new Date()
@@ -95,8 +95,7 @@ logbot.on('join', (event) => {
     appendLog(now, channel, content)
 })
 
-logbot.on('part', (event) => {
-    const {channel, nick} = event
+logbot.addListener('part', (channel, nick) => {
     if(!channels.includes(channel)) return
 
     const now = new Date()
@@ -106,8 +105,7 @@ logbot.on('part', (event) => {
     appendLog(now, channel, content)
 })
 
-logbot.on('quit', (event) => {
-    const {nick} = event
+logbot.addListener('quit', (nick) => {
 
     const now = new Date()
     const date = dateformat(now, timeFormat)
@@ -180,72 +178,54 @@ socket.on('connection', (conn) => {
 
     conn.on('join', (data) => {
         nick = data.nick
-
-        client = new IRC.Client()
-        client.connect({
-            host: ircHost,
+        channel = data.channel
+        
+        client = new irc.Client(ircHost, data.nick, {
             port: ircPort,
-            nick: data.nick,
-            username: data.displaynick || data.nick,
+            realName: data.displaynick || data.nick,
+            sasl: (!data.password == false),
+            password: data.password,
+            channels: [data.channel],
         })
 
-        client.on('error', (err) => {
-            console.error(err)
-        })
-
-        client.on('close', () => {
-            conn.emit('close', {})
-        })
-
-        client.on('registered', () => {
-            if(channels.includes(data.channel)) {
-                channel = client.channel(data.channel)
-                channel.join()
-            }
-        })
-
-        client.on('message', (data) => {
+        client.addListener('message', (nick, target, message) => {
             const date = dateformat(new Date(), timeFormat)
-            const {target, nick, message} = data
-            if(channel && channel.name == target) {
+            if(channel == target) {
                 conn.emit('message', `${date} - ${nick}: ${message}\n`)
             }
         })
 
-        client.on('join', (data) => {
+        client.addListener('join', (target, nick) => {
             const date = dateformat(new Date(), timeFormat)
-            const {channel: target, nick} = data
-            if(channel && channel.name == target) {
+            if(channel == target) {
                 conn.emit('message', `${date} - ${nick} joined\n`)
             }
         })
 
-        client.on('part', (data) => {
+        client.addListener('part', (target, nick) => {
             const date = dateformat(new Date(), timeFormat)
-            const {channel: target, nick} = data
-            if(channel && channel.name == target) {
+            if(channel == target) {
                 conn.emit('message', `${date} - ${nick} quit\n`)
             }
         })
 
-        client.on('quit', (data) => {
+        client.addListener('quit', (nick) => {
             const date = dateformat(new Date(), timeFormat)
-            const {nick} = data
             conn.emit('message', `${date} - ${nick} quit\n`)
         })
+
+        client.addListener('error', (err) => console.error(err))
 
     })
 
     conn.on('message', (msg) => {
-        if(channel) {
-            channel.say(msg)
-            const date = dateformat(new Date(), timeFormat)
-            conn.emit('message', `${date} - ${nick}: ${msg}\n`)
-        }
+        client.say(channel, msg)
+        const date = dateformat(new Date(), timeFormat)
+        conn.emit('message', `${date} - ${nick}: ${msg}\n`)
     })
 
     conn.on('disconnect', () => {
-        if(client) client.quit()
+        if(client) client.disconnect()
     })
 
 })
