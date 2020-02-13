@@ -39,6 +39,8 @@ body {
     font-family: serif;
     word-break: break-all;
     text-indent: 2ex;
+
+    font-family: 'Noto Serif TC', 'Noto Serif SC', 'Noto Serif JP', 'Noto Serif KR', 'Noto Serif', serif;
 }
 
 #chatlog > .group {
@@ -83,6 +85,10 @@ button#loadmore {
 }
 
 .said {
+    color: red;
+}
+
+.other {
     color: red;
 }
 
