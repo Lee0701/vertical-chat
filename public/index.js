@@ -111,8 +111,9 @@ window.addEventListener('load', () => {
         const joined = msg.indexOf(' joined')
         const parted = msg.indexOf(' quit')
 
-        const time = msg.substring(0, i1)
-        const date = new Date(Date.parse(time))
+        const time = msg.substring(0, i1).split(/[^0-9]/)
+        for(const i in time) time[i] = parseInt(time[i])
+        const date = new Date(time[0], time[1]-1, time[2], time[3], time[4], time[5])
         const displayDate = diffHanDate(lastDate || date, date)
         const fullDate = diffHanDate(new Date(0), date)
 
