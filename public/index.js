@@ -4,12 +4,6 @@ window.addEventListener('load', () => {
     const converter = window.index.NumberToChineseWords
     const socket = io()
 
-    let connecting = false
-    let nick = null
-    let channel = null
-
-    if(channelParam) channel = channelParam
-
     const nicks = {}
     let firstDate = new Date()
     let lastDate = new Date(0)
@@ -23,17 +17,11 @@ window.addEventListener('load', () => {
     }
 
     socket.on('connect', () => {
-        $('#login').css('display', 'flex')
-        $('#write').css('display', 'none')
-        $('#login button').html('進入')
-        $('#login button').prop('disabled', false)
-
-        connecting = false
-
+        if(nick) socket.emit('join', {})    
         $('#chatlog').html('')
         if(channel) fetchLog(channel)
     })
-
+    
     $('#loadmore').click(() => {
         fetchLog(channel, formatDate(getYesterday(firstDate)))
     })
@@ -46,26 +34,7 @@ window.addEventListener('load', () => {
         scrollToBottom()
     })
 
-    $('#login').submit((event) => {
-        event.preventDefault()
-        if(connecting) return
-
-        nick = $('#nick').val()
-        displaynick = $('#displaynick').val()
-        channel = $('#channel').val()
-        const password = $('#password').val()
-
-        socket.emit('join', {nick, displaynick, password, channel})
-
-        $('#login button').html('進入中⋯')
-        $('#login button').prop('disabled', true)
-        connecting = true
-    })
-
     socket.on('registered', () => {
-        $('#login').css('display', 'none')
-        $('#write').css('display', 'flex')
-
         $('#chatlog').html('')
         if(channel) fetchLog(channel)
     })
@@ -206,3 +175,4 @@ window.addEventListener('load', () => {
     const scrollToBottom = () => $('#chatlog-wrapper').scrollLeft(-$('#chatlog').width())
 
 })
+''

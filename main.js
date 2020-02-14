@@ -5,11 +5,13 @@ const fs = require('fs')
 const path = require('path')
 const mkdirp = require('mkdirp')
 const dateformat = require('dateformat')
+const randomstring = require('randomstring')
 
 const http = require('http')
 const express = require('express')
 const socketio = require('socket.io')
 
+const session = require('express-session')
 const bodyParser = require('body-parser')
 const {Liquid} = require('liquidjs')
 
@@ -118,13 +120,39 @@ logbot.addListener('quit', (nick) => {
 app.set('view engine', 'html')
 app.engine('html', liquid.express())
 
+const secret = randomstring.generate()
+const sessionMiddleware = session({
+    secret: secret,
+    resave: false,
+    saveUninitialized: true,
+})
+
+app.use(sessionMiddleware)
 app.use(bodyParser.urlencoded({extended : false}))
 app.use(bodyParser.json())
 app.use(express.static('public'))
 
 app.get('/', (req, res) => {
-    const channel = req.query.channel || '#'
-    res.render('index.html', {channel})
+    const {nick, displaynick} = req.session
+    const channel = req.session.channel || req.query.channel || '#'
+    res.render('index.html', {nick, displaynick, channel})
+})
+
+app.post('/login', (req, res) => {
+    const {nick, displaynick, password, channel} = req.body
+    req.session.nick = nick
+    req.session.displaynick = displaynick
+    req.session.password = password
+    req.session.channel = channel
+    res.redirect('/')
+})
+
+app.get('/logout', (req, res) => {
+    delete req.session.nick
+    delete req.session.displaynick
+    delete req.session.password
+    delete req.session.channel
+    res.redirect('/')
 })
 
 app.get('/logs/:channel', (req, res) => {
@@ -161,30 +189,29 @@ const sendLog = (res, channel, date, double=false) => {
     })
 }
 
+socket.use((socket, next) => sessionMiddleware(socket.request, socket.request.res, next))
+
 socket.on('connection', (conn) => {
+    
     let client = null
-    let nick = null
-    let channel = null
+    const {nick, displaynick, password, channel} = conn.request.session
 
     conn.emit('nick', nicks)
 
-    conn.on('join', (data) => {
-        nick = data.nick
-        channel = data.channel
-        
-        if(data.displaynick) nicks[nick] = data.displaynick
+    conn.on('join', () => {
+        if(!nick) return
+
+        if(displaynick) nicks[nick] = displaynick
         saveNicks()
     
-        client = new irc.Client(ircHost, data.nick, {
+        client = new irc.Client(ircHost, nick, {
             port: ircPort,
-            userName: data.nick,
-            realName: data.displaynick || data.nick,
-            sasl: (!data.password == false),
-            password: data.password,
-            channels: [data.channel],
+            userName: nick,
+            realName: displaynick || nick,
+            sasl: (!password == false),
+            password: password,
+            channels: [channel],
         })
-
-        conn.emit('nick', nicks)
 
         client.addListener('registered', () => {
             conn.emit('registered', {})

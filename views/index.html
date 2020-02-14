@@ -8,7 +8,8 @@
     <script src="/jquery.3.4.1.min.js"></script>
     <script src="/number-to-chinese-words.min.js"></script>
     <script>
-        const channelParam = '{{ channel }}'
+        const channel = '{{ channel }}' || null
+        const nick = '{{ nick }}' || null
     </script>
     <script src="/index.js"></script>
 </head>
@@ -18,16 +19,19 @@
         <div id="chatlog">
         </div>
     </div>
-    <form id="write" style="display: none;">
+    {% if nick %}
+    <form id="write">
         <input type="text" id="message" autocomplete="off">
         <button type="submit" id="send">送信</button>
     </form>
-    <form id="login" method="post" action="/">
+    {% else %}
+    <form id="login" method="post" action="/login">
         <input type="text" name="nick" id="nick" placeholder="名">
         <input type="text" name="displaynick" id="displaynick" placeholder="實名">
         <input type="password" name="password" id="password" placeholder="暗號">
-        <input type="text" id="channel" value="{{ channel }}" placeholder="臺">
+        <input type="text" name="channel" id="channel" value="{{ channel }}" placeholder="臺">
         <button type="submit">進入</button>
     </form>
+    {% endif %}
 </body>
 </html>
