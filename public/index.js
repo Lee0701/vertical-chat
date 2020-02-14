@@ -34,11 +34,6 @@ window.addEventListener('load', () => {
         scrollToBottom()
     })
 
-    socket.on('registered', () => {
-        $('#chatlog').html('')
-        if(channel) fetchLog(channel)
-    })
-
     socket.on('nick', (data) => {
         for(key of Object.keys(data)) nicks[key] = data[key]
     })

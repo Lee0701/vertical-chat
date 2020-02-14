@@ -45,6 +45,8 @@ fs.readFile(path.join(basedir, logdir, 'nicks.json'), (err, data) => {
 })
 const saveNicks = () => fs.writeFileSync(path.join(basedir, logdir, 'nicks.json'), JSON.stringify(nicks))
 
+const clients = {}
+
 const appendLog = (now, target, content) => {
     const double = target.startsWith('##')
     const channel = target.replace(/\#/g, '')
@@ -133,9 +135,31 @@ app.use(bodyParser.json())
 app.use(express.static('public'))
 
 app.get('/', (req, res) => {
-    const {nick, displaynick} = req.session
+    const {nick, displaynick, password} = req.session
     const channel = req.session.channel || req.query.channel || '#'
     res.render('index.html', {nick, displaynick, channel})
+
+    if(nick && displaynick) nicks[nick] = displaynick
+    saveNicks()
+
+    if(nick) {
+        if(!clients[nick]) {
+            const client = new irc.Client(ircHost, nick, {
+                port: ircPort,
+                userName: nick,
+                realName: displaynick || nick,
+                sasl: (!password == false),
+                password: password,
+                channels: [channel],
+            })
+
+            client.addListener('registered', () => console.log(nick + ' is registered'))
+            client.addListener('error', (err) => console.error(err))
+
+            clients[nick] = client
+        }
+    }
+
 })
 
 app.post('/login', (req, res) => {
@@ -148,6 +172,13 @@ app.post('/login', (req, res) => {
 })
 
 app.get('/logout', (req, res) => {
+    const {nick} = req.session
+
+    if(clients[nick]) {
+        clients[nick].disconnect()
+        delete clients[nick]
+    }
+
     delete req.session.nick
     delete req.session.displaynick
     delete req.session.password
@@ -192,31 +223,12 @@ const sendLog = (res, channel, date, double=false) => {
 socket.use((socket, next) => sessionMiddleware(socket.request, socket.request.res, next))
 
 socket.on('connection', (conn) => {
-    
-    let client = null
-    const {nick, displaynick, password, channel} = conn.request.session
+    const {nick, channel} = conn.request.session
+    const client = clients[nick]
 
     conn.emit('nick', nicks)
 
-    conn.on('join', () => {
-        if(!nick) return
-
-        if(displaynick) nicks[nick] = displaynick
-        saveNicks()
-    
-        client = new irc.Client(ircHost, nick, {
-            port: ircPort,
-            userName: nick,
-            realName: displaynick || nick,
-            sasl: (!password == false),
-            password: password,
-            channels: [channel],
-        })
-
-        client.addListener('registered', () => {
-            conn.emit('registered', {})
-        })
-
+    if(client) {
         client.addListener('message', (nick, target, message) => {
             const date = dateformat(new Date(), timeFormat)
             if(channel == target) {
@@ -243,19 +255,17 @@ socket.on('connection', (conn) => {
             conn.emit('message', `${date} - ${nick} quit\n`)
         })
 
-        client.addListener('error', (err) => console.error(err))
-
-    })
-
-    conn.on('message', (msg) => {
-        client.say(channel, msg)
-        const date = dateformat(new Date(), timeFormat)
-        conn.emit('message', `${date} - ${nick}: ${msg}\n`)
-    })
-
-    conn.on('disconnect', () => {
-        if(client) client.disconnect()
-    })
+        conn.on('message', (msg) => {
+            client.say(channel, msg)
+            const date = dateformat(new Date(), timeFormat)
+            conn.emit('message', `${date} - ${nick}: ${msg}\n`)
+        })
+    
+        conn.on('disconnect', () => {
+            // client.disconnect()
+        })
+    
+    }
 
 })
 
