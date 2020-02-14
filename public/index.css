@@ -43,12 +43,14 @@ body {
 }
 
 #chatlog {
+    display: flex;
+    flex-direction: column;
+    
     font-size: 24pt;
     font-family: serif;
     word-break: break-all;
     text-indent: 2ex;
     font-family: 'Noto Serif TC', 'Noto Serif SC', 'Noto Serif JP', 'Noto Serif KR', 'Noto Serif', serif;
-
 }
 
 #chatlog > .group {

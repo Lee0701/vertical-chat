@@ -43,6 +43,7 @@ window.addEventListener('load', () => {
         const text = $('#message').val()
         if(text.trim() != '') socket.emit('message', text)
         $('#message').val('')
+        scrollToBottom()
     })
 
     $('#login').submit((event) => {
@@ -154,7 +155,9 @@ window.addEventListener('load', () => {
         $.ajax({
             url: '/logs/' + doublePrefix + channelName + '/' + (date ? date + '/' : ''),
             success: (data) => {
+                const scroll = isScrolledToBottom()
                 prependLog(data, date == null)
+                if(scroll) scrollToBottom()
             },
             error: () => {
                 if(retry) {
@@ -163,6 +166,7 @@ window.addEventListener('load', () => {
                 }
             }
         })
+        
     }
 
     const prependLog = (log, updateLastDate=false) => {
@@ -191,7 +195,13 @@ window.addEventListener('load', () => {
     const appendMessage = (msg) => {
         const parsed = parseMessage(msg, lastDate)
         lastDate = parsed.date
+        
+        const scroll = isScrolledToBottom()
         $('#chatlog > .group').last().append(formatMessage(parsed))
+        if(scroll) scrollToBottom()
     }
+
+    const isScrolledToBottom = () => -$('#chatlog-wrapper').scrollLeft() - ($('#chatlog').width() - $('#chatlog-wrapper').width() + 32) > -32
+    const scrollToBottom = () => $('#chatlog-wrapper').scrollLeft(-$('#chatlog').width())
 
 })
