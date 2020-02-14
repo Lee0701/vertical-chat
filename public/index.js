@@ -34,6 +34,10 @@ window.addEventListener('load', () => {
         scrollToBottom()
     })
 
+    $('#logout').click(() => {
+        location.replace('/logout')
+    })
+
     socket.on('nick', (data) => {
         for(key of Object.keys(data)) nicks[key] = data[key]
     })
