@@ -23,7 +23,7 @@ window.addEventListener('load', () => {
     }
 
     socket.on('connect', () => {
-        $('#login').css('display', 'block')
+        $('#login').css('display', 'flex')
         $('#write').css('display', 'none')
         $('#login button').html('進入')
         $('#login button').prop('disabled', false)
@@ -63,7 +63,7 @@ window.addEventListener('load', () => {
 
     socket.on('registered', () => {
         $('#login').css('display', 'none')
-        $('#write').css('display', 'block')
+        $('#write').css('display', 'flex')
 
         $('#chatlog').html('')
         if(channel) fetchLog(channel)
