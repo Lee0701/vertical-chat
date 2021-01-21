@@ -20,6 +20,6 @@
     "mkdirp": "^1.0.3",
     "number-to-chinese-words": "^1.0.20",
     "randomstring": "^1.1.5",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.4.0"
   }
 }
